@@ -1,0 +1,20 @@
+Completed bonus tasks: 7a, 7b, 7c, 7d, 7e, 7f, 7g, 7i, 7j.
+The listed tasks total 3.0 points; the assignment caps bonus credit at 2.5 points.
+
+7a: A chime plays when the Player collects a Pick Up.
+7b: Eight thin maze walls are added inside the four boundary walls.
+7c: Custom pinball playfield and metal rail textures, a polished chrome Player, and gold facet Pick Ups.
+7d: Three additional lights with different colors and types.
+7e: Smooth camera follow.
+7f: Visible score, increased by each collected Pick Up.
+7g: A 180-second countdown with a "Time's up!" message.
+7i: "Congratulations!" after all 12 Pick Ups are collected.
+7j: Confetti particles on victory.
+
+ADDITIONAL FEATURE (outside the listed bonus tasks):
+Four invisible Box Collider safety walls prevent the Player from leaving the level. They are explicitly grouped in the scene as "ADDITIONAL - Invisible Safety Walls".
+
+Controls: Arrow keys or WASD to roll. Press R to restart after winning or losing.
+
+Video notes:
+The recordings show the running Unity 6.3 LTS game following a reproducible automated path through the level. The regular game retains its arrow/WASD PlayerController. The bonus video's final segment demonstrates the same countdown with a temporary 5-second setting; the project scene uses 180 seconds.
