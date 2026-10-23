@@ -17,14 +17,21 @@ public static class RollABallSceneBuilder
         EnsureFolder("Assets/Textures");
         EnsureTag("PickUp");
 
-        Material groundMaterial = CreateMaterial("Background", new Color(0.12f, 0.2f, 0.35f), 0.12f, 0.65f,
-            CreateTexture("GroundGrid", TexturePattern.Ground), new Vector2(4f, 4f));
-        Material wallMaterial = CreateMaterial("WallMaterial", Color.white, 0f, 0.3f,
-            CreateTexture("BrickWall", TexturePattern.Brick), Vector2.one);
-        Material playerMaterial = CreateMaterial("PlayerMaterial", new Color(1f, 0.75f, 0.25f), 0.45f, 0.68f,
-            CreateTexture("PlayerPanels", TexturePattern.Player), Vector2.one);
+        Material groundMaterial = CreateMaterial("Background", Color.white, 0.08f, 0.55f,
+            CreateTexture("PinballPlayfield", TexturePattern.Ground), new Vector2(4f, 4f));
+        Material wallMaterial = CreateMaterial("WallMaterial", Color.white, 0.72f, 0.78f,
+            CreateTexture("PinballRail", TexturePattern.Rail), Vector2.one);
+        Material playerMaterial = CreateMaterial("PlayerMaterial", new Color(0.82f, 0.9f, 0.98f), 1f, 0.96f,
+            null, Vector2.one);
         Material pickupMaterial = CreateMaterial("PickUpMaterial", new Color(1f, 0.92f, 0.28f), 0.35f, 0.78f,
             CreateTexture("PickupFacets", TexturePattern.Pickup), Vector2.one);
+        Material neonMaterial = CreateMaterial("NeonRailMaterial", new Color(0.06f, 0.75f, 1f), 0f, 0.75f,
+            null, Vector2.one);
+        neonMaterial.SetColor("_EmissionColor", new Color(0.05f, 0.85f, 1f) * 2f);
+        neonMaterial.EnableKeyword("_EMISSION");
+        EditorUtility.SetDirty(neonMaterial);
+        Material trailMaterial = CreateMaterial("PinballTrailMaterial", new Color(0.35f, 0.9f, 1f), 0f, 0f,
+            null, Vector2.one);
 
         GameObject ground = GameObject.Find("Ground");
         ground.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -35,6 +42,33 @@ public static class RollABallSceneBuilder
         player.transform.SetPositionAndRotation(new Vector3(0f, 2f, 0f), Quaternion.identity);
         player.transform.localScale = Vector3.one;
         player.GetComponent<Renderer>().sharedMaterial = playerMaterial;
+        TrailRenderer trail = player.GetComponent<TrailRenderer>();
+        if (trail == null) trail = player.AddComponent<TrailRenderer>();
+        trail.sharedMaterial = trailMaterial;
+        trail.time = 0.3f;
+        trail.startWidth = 0.18f;
+        trail.endWidth = 0f;
+        trail.minVertexDistance = 0.06f;
+        trail.emitting = true;
+        Gradient trailColors = new Gradient();
+        trailColors.SetKeys(
+            new[] { new GradientColorKey(new Color(0.55f, 0.95f, 1f), 0f), new GradientColorKey(new Color(0.05f, 0.5f, 1f), 1f) },
+            new[] { new GradientAlphaKey(0.65f, 0f), new GradientAlphaKey(0f, 1f) });
+        trail.colorGradient = trailColors;
+        Transform ballLight = player.transform.Find("Pinball Ball Light");
+        if (ballLight == null)
+        {
+            GameObject lightObject = new GameObject("Pinball Ball Light");
+            ballLight = lightObject.transform;
+            ballLight.SetParent(player.transform);
+            ballLight.localPosition = Vector3.zero;
+        }
+        Light ballGlow = ballLight.GetComponent<Light>();
+        if (ballGlow == null) ballGlow = ballLight.gameObject.AddComponent<Light>();
+        ballGlow.type = LightType.Point;
+        ballGlow.color = new Color(0.55f, 0.9f, 1f);
+        ballGlow.intensity = 1.5f;
+        ballGlow.range = 3f;
         Rigidbody rb = player.GetComponent<Rigidbody>();
         if (rb == null) rb = player.AddComponent<Rigidbody>();
         rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -49,6 +83,9 @@ public static class RollABallSceneBuilder
 
         GameObject camera = GameObject.Find("Main Camera");
         camera.transform.SetPositionAndRotation(new Vector3(0f, 10f, 10f), Quaternion.Euler(45f, 180f, 0f));
+        Camera sceneCamera = camera.GetComponent<Camera>();
+        sceneCamera.clearFlags = CameraClearFlags.SolidColor;
+        sceneCamera.backgroundColor = new Color(0.015f, 0.025f, 0.055f);
         CameraController cameraController = camera.GetComponent<CameraController>();
         if (cameraController == null) cameraController = camera.AddComponent<CameraController>();
         cameraController.player = player;
@@ -56,9 +93,10 @@ public static class RollABallSceneBuilder
 
         GameObject sunlight = GameObject.Find("Directional Light");
         sunlight.transform.rotation = Quaternion.Euler(50f, 60f, 0f);
-        sunlight.GetComponent<Light>().intensity = 1.5f;
+        sunlight.GetComponent<Light>().intensity = 1.25f;
 
-        BuildWalls(wallMaterial);
+        BuildWalls(wallMaterial, neonMaterial);
+        BuildInvisibleSafetyWalls();
         BuildPickups(pickupMaterial);
         BuildLights();
 
@@ -71,31 +109,31 @@ public static class RollABallSceneBuilder
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Selection.activeGameObject = player;
-        Debug.Log("RollABall scene built: 12 Pick Ups, boundary walls, 8 maze walls, lights and bonus systems.");
+        Debug.Log("RollABall Pinball scene built: 12 Pick Ups, 12 visible rails, 4 additional invisible safety walls and bonus systems.");
     }
 
-    private static void BuildWalls(Material material)
+    private static void BuildWalls(Material material, Material neonMaterial)
     {
         DestroyIfPresent("Walls");
         GameObject root = new GameObject("Walls");
 
-        CreateWall(root.transform, "West Wall", new Vector3(-10f, 0f, 0f), new Vector3(0.5f, 2f, 20.5f), material);
-        CreateWall(root.transform, "East Wall", new Vector3(10f, 0f, 0f), new Vector3(0.5f, 2f, 20.5f), material);
-        CreateWall(root.transform, "North Wall", new Vector3(0f, 0f, 10f), new Vector3(20.5f, 2f, 0.5f), material);
-        CreateWall(root.transform, "South Wall", new Vector3(0f, 0f, -10f), new Vector3(20.5f, 2f, 0.5f), material);
+        CreateWall(root.transform, "West Wall", new Vector3(-10f, 0f, 0f), new Vector3(0.5f, 2f, 20.5f), material, neonMaterial);
+        CreateWall(root.transform, "East Wall", new Vector3(10f, 0f, 0f), new Vector3(0.5f, 2f, 20.5f), material, neonMaterial);
+        CreateWall(root.transform, "North Wall", new Vector3(0f, 0f, 10f), new Vector3(20.5f, 2f, 0.5f), material, neonMaterial);
+        CreateWall(root.transform, "South Wall", new Vector3(0f, 0f, -10f), new Vector3(20.5f, 2f, 0.5f), material, neonMaterial);
 
         // Two separated segments per lane leave a clear passage for the ball.
-        CreateWall(root.transform, "Maze Wall 1", new Vector3(-6f, 0f, -6.5f), new Vector3(0.35f, 1.5f, 6f), material);
-        CreateWall(root.transform, "Maze Wall 2", new Vector3(-6f, 0f, 4.5f), new Vector3(0.35f, 1.5f, 10f), material);
-        CreateWall(root.transform, "Maze Wall 3", new Vector3(-2f, 0f, -4.5f), new Vector3(0.35f, 1.5f, 10f), material);
-        CreateWall(root.transform, "Maze Wall 4", new Vector3(-2f, 0f, 6.5f), new Vector3(0.35f, 1.5f, 6f), material);
-        CreateWall(root.transform, "Maze Wall 5", new Vector3(2f, 0f, -6.5f), new Vector3(0.35f, 1.5f, 6f), material);
-        CreateWall(root.transform, "Maze Wall 6", new Vector3(2f, 0f, 4.5f), new Vector3(0.35f, 1.5f, 10f), material);
-        CreateWall(root.transform, "Maze Wall 7", new Vector3(6f, 0f, -4.5f), new Vector3(0.35f, 1.5f, 10f), material);
-        CreateWall(root.transform, "Maze Wall 8", new Vector3(6f, 0f, 6.5f), new Vector3(0.35f, 1.5f, 6f), material);
+        CreateWall(root.transform, "Maze Wall 1", new Vector3(-6f, 0f, -6.5f), new Vector3(0.35f, 1.5f, 6f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 2", new Vector3(-6f, 0f, 4.5f), new Vector3(0.35f, 1.5f, 10f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 3", new Vector3(-2f, 0f, -4.5f), new Vector3(0.35f, 1.5f, 10f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 4", new Vector3(-2f, 0f, 6.5f), new Vector3(0.35f, 1.5f, 6f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 5", new Vector3(2f, 0f, -6.5f), new Vector3(0.35f, 1.5f, 6f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 6", new Vector3(2f, 0f, 4.5f), new Vector3(0.35f, 1.5f, 10f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 7", new Vector3(6f, 0f, -4.5f), new Vector3(0.35f, 1.5f, 10f), material, neonMaterial);
+        CreateWall(root.transform, "Maze Wall 8", new Vector3(6f, 0f, 6.5f), new Vector3(0.35f, 1.5f, 6f), material, neonMaterial);
     }
 
-    private static void CreateWall(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
+    private static void CreateWall(Transform parent, string name, Vector3 position, Vector3 scale, Material material, Material neonMaterial)
     {
         GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         wall.name = name;
@@ -103,7 +141,7 @@ public static class RollABallSceneBuilder
         wall.transform.position = position;
         wall.transform.localScale = scale;
         wall.GetComponent<Renderer>().sharedMaterial = material;
-        // Keep each brick about the same world-space size on every wall face.
+        // Keep the metal panel pattern at a similar world-space size on every wall face.
         Mesh mesh = Object.Instantiate(wall.GetComponent<MeshFilter>().sharedMesh);
         Vector3[] vertices = mesh.vertices;
         Vector3[] normals = mesh.normals;
@@ -121,6 +159,34 @@ public static class RollABallSceneBuilder
         }
         mesh.uv = uv;
         wall.GetComponent<MeshFilter>().sharedMesh = mesh;
+
+        GameObject trim = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        trim.name = "Neon Edge";
+        trim.transform.SetParent(wall.transform);
+        trim.transform.localPosition = new Vector3(0f, 0.5f + 0.04f / scale.y, 0f);
+        trim.transform.localScale = scale.x > scale.z
+            ? new Vector3(1f, 0.08f / scale.y, 0.08f / scale.z)
+            : new Vector3(0.08f / scale.x, 0.08f / scale.y, 1f);
+        trim.GetComponent<Renderer>().sharedMaterial = neonMaterial;
+        Object.DestroyImmediate(trim.GetComponent<BoxCollider>());
+    }
+
+    private static void BuildInvisibleSafetyWalls()
+    {
+        DestroyIfPresent("ADDITIONAL - Invisible Safety Walls");
+        GameObject root = new GameObject("ADDITIONAL - Invisible Safety Walls");
+        CreateInvisibleWall(root.transform, "West Safety Collider", new Vector3(-10.75f, 0.75f, 0f), new Vector3(0.6f, 4f, 22.5f));
+        CreateInvisibleWall(root.transform, "East Safety Collider", new Vector3(10.75f, 0.75f, 0f), new Vector3(0.6f, 4f, 22.5f));
+        CreateInvisibleWall(root.transform, "North Safety Collider", new Vector3(0f, 0.75f, 10.75f), new Vector3(22.5f, 4f, 0.6f));
+        CreateInvisibleWall(root.transform, "South Safety Collider", new Vector3(0f, 0.75f, -10.75f), new Vector3(22.5f, 4f, 0.6f));
+    }
+
+    private static void CreateInvisibleWall(Transform parent, string name, Vector3 position, Vector3 size)
+    {
+        GameObject safetyWall = new GameObject(name);
+        safetyWall.transform.SetParent(parent);
+        safetyWall.transform.position = position;
+        safetyWall.AddComponent<BoxCollider>().size = size;
     }
 
     private static void BuildPickups(Material material)
@@ -162,9 +228,9 @@ public static class RollABallSceneBuilder
     {
         DestroyIfPresent("Bonus Lights");
         GameObject root = new GameObject("Bonus Lights");
-        CreateLight(root.transform, "Blue Point Light", LightType.Point, new Vector3(-6f, 4f, -5f), new Color(0.15f, 0.65f, 1f), 8f, 12f);
-        CreateLight(root.transform, "Amber Point Light", LightType.Point, new Vector3(5f, 4f, 6f), new Color(1f, 0.52f, 0.15f), 8f, 12f);
-        Light spot = CreateLight(root.transform, "Violet Spot Light", LightType.Spot, new Vector3(0f, 9f, 0f), new Color(0.65f, 0.38f, 1f), 14f, 18f);
+        CreateLight(root.transform, "Blue Point Light", LightType.Point, new Vector3(-6f, 4f, -5f), new Color(0.15f, 0.65f, 1f), 3.5f, 12f);
+        CreateLight(root.transform, "Amber Point Light", LightType.Point, new Vector3(5f, 4f, 6f), new Color(1f, 0.52f, 0.15f), 3.5f, 12f);
+        Light spot = CreateLight(root.transform, "Violet Spot Light", LightType.Spot, new Vector3(0f, 9f, 0f), new Color(0.65f, 0.38f, 1f), 5f, 18f);
         spot.spotAngle = 75f;
         spot.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
     }
@@ -203,7 +269,7 @@ public static class RollABallSceneBuilder
         return material;
     }
 
-    private enum TexturePattern { Ground, Brick, Player, Pickup }
+    private enum TexturePattern { Ground, Rail, Pickup }
 
     private static Texture2D CreateTexture(string name, TexturePattern pattern)
     {
@@ -220,23 +286,21 @@ public static class RollABallSceneBuilder
                 switch (pattern)
                 {
                     case TexturePattern.Ground:
-                        bool grid = x % 32 < 2 || y % 32 < 2;
-                        color = grid ? new Color(0.18f, 0.46f, 0.68f) : new Color(0.17f, 0.25f, 0.39f);
+                        float radius = Vector2.Distance(new Vector2(x, y), new Vector2(128f, 128f));
+                        bool ring = Mathf.Abs(radius - 58f) < 3f || Mathf.Abs(radius - 92f) < 2f;
+                        bool target = Mathf.Abs(x - 128) + Mathf.Abs(y - 128) < 15;
+                        color = target ? new Color(0.8f, 0.22f, 0.5f)
+                            : ring ? new Color(0.08f, 0.48f, 0.62f)
+                            : new Color(0.035f, 0.065f, 0.12f);
                         break;
-                    case TexturePattern.Brick:
-                        int course = y / 32;
-                        int brickX = (x + (course % 2) * 32) % 64;
-                        int brickY = y % 32;
-                        bool mortar = brickX < 3 || brickY < 3;
-                        float variation = (Mathf.PerlinNoise((x / 64) * 3.7f, course * 2.3f) - 0.5f) * 0.12f;
-                        float edgeShade = brickX < 7 || brickY < 7 ? -0.08f : 0f;
-                        color = mortar
-                            ? new Color(0.59f, 0.54f, 0.48f)
-                            : new Color(0.66f + variation + edgeShade, 0.24f + variation * 0.4f + edgeShade * 0.4f, 0.16f + variation * 0.3f);
-                        break;
-                    case TexturePattern.Player:
-                        bool panel = (x / 32 + y / 32) % 2 == 0;
-                        color = panel ? new Color(1f, 0.78f, 0.28f) : new Color(0.9f, 0.34f, 0.08f);
+                    case TexturePattern.Rail:
+                        bool neonLine = (y > 26 && y < 34) || (y > 214 && y < 222);
+                        bool panelSeam = x % 64 < 3;
+                        bool rivet = (x % 64 > 29 && x % 64 < 35) && (y < 8 || y > 248);
+                        color = neonLine ? new Color(0.05f, 0.9f, 1f)
+                            : rivet ? new Color(0.76f, 0.86f, 0.91f)
+                            : panelSeam ? new Color(0.02f, 0.04f, 0.08f)
+                            : new Color(0.13f, 0.19f, 0.26f);
                         break;
                     default:
                         bool facet = ((x + y) / 28) % 2 == 0;
@@ -283,5 +347,25 @@ public static class RollABallSceneBuilder
         GameObject existing = GameObject.Find(name);
         if (existing != null)
             Object.DestroyImmediate(existing);
+    }
+
+    public static void CapturePreview()
+    {
+        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        Camera camera = GameObject.Find("Main Camera").GetComponent<Camera>();
+        RenderTexture target = new RenderTexture(1280, 720, 24);
+        Texture2D image = new Texture2D(1280, 720, TextureFormat.RGB24, false);
+        camera.targetTexture = target;
+        RenderTexture.active = target;
+        camera.Render();
+        image.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
+        image.Apply();
+        string path = Path.Combine(Path.GetTempPath(), "rollaball-pinball-preview.png");
+        File.WriteAllBytes(path, image.EncodeToPNG());
+        camera.targetTexture = null;
+        RenderTexture.active = null;
+        Object.DestroyImmediate(image);
+        Object.DestroyImmediate(target);
+        Debug.Log("Pinball preview saved to " + path);
     }
 }

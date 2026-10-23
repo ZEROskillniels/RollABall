@@ -2,7 +2,7 @@ Completed bonus tasks: 7a, 7b, 7c, 7d, 7e, 7f, 7g, 7i, 7j.
 
 7a: A chime plays when the Player collects a Pick Up.
 7b: Eight thin walls form a navigable maze inside the four boundary walls.
-7c: Ground, walls, Player and Pick Ups each use a distinct textured material.
+7c: The pinball playfield and metal rails use custom textures, the Player is polished chrome, and Pick Ups use a gold facet texture.
 7d: Three additional colored lights illuminate the level.
 7e: The camera follows the Player smoothly.
 7f: The score is displayed and increases for every Pick Up.
@@ -11,3 +11,5 @@ Completed bonus tasks: 7a, 7b, 7c, 7d, 7e, 7f, 7g, 7i, 7j.
 7j: Collecting all 12 Pick Ups launches confetti particles.
 
 Controls: arrow keys or WASD to roll; R to restart after winning or losing.
+
+Additional feature (outside the listed bonus tasks): Four invisible Box Collider safety walls surround the visible pinball rails so the Player cannot leave the level. They are grouped in the scene as "ADDITIONAL - Invisible Safety Walls".
