@@ -1,0 +1,13 @@
+Completed bonus tasks: 7a, 7b, 7c, 7d, 7e, 7f, 7g, 7i, 7j.
+
+7a: A chime plays when the Player collects a Pick Up.
+7b: Eight thin walls form a navigable maze inside the four boundary walls.
+7c: Ground, walls, Player and Pick Ups each use a distinct textured material.
+7d: Three additional colored lights illuminate the level.
+7e: The camera follows the Player smoothly.
+7f: The score is displayed and increases for every Pick Up.
+7g: A 180-second countdown displays "Time's up!" when it reaches zero.
+7i: Collecting all 12 Pick Ups displays "Congratulations!".
+7j: Collecting all 12 Pick Ups launches confetti particles.
+
+Controls: arrow keys or WASD to roll; R to restart after winning or losing.
