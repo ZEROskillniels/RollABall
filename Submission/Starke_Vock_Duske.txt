@@ -18,3 +18,7 @@ Controls: Arrow keys or WASD to roll. Press R to restart after winning or losing
 
 Video notes:
 The recordings show the running Unity 6.3 LTS game following a reproducible automated path through the level. The regular game retains its arrow/WASD PlayerController. The bonus video's final segment demonstrates the same countdown with a temporary 5-second setting; the project scene uses 180 seconds.
+
+Project repository:
+The project is available in our repository: https://github.com/ZEROskillniels/RollABall
+The repository is publicly accessible from 29 October through 31 October 2026 and will be made private afterwards.
