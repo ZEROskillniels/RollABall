@@ -21,8 +21,10 @@ public static class RollABallSceneBuilder
             CreateTexture("PinballPlayfield", TexturePattern.Ground), new Vector2(4f, 4f));
         Material wallMaterial = CreateMaterial("WallMaterial", Color.white, 0.72f, 0.78f,
             CreateTexture("PinballRail", TexturePattern.Rail), Vector2.one);
+        ApplySurfaceMaps(wallMaterial, "PinballRailNormal", "PinballRailMetallic");
         Material playerMaterial = CreateMaterial("PlayerMaterial", new Color(0.82f, 0.9f, 0.98f), 1f, 0.96f,
-            null, Vector2.one);
+            AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/PinballBallBase.png"), Vector2.one);
+        ApplySurfaceMaps(playerMaterial, "PinballBallNormal", "PinballBallMetallic");
         Material pickupMaterial = CreateMaterial("PickUpMaterial", new Color(1f, 0.92f, 0.28f), 0.35f, 0.78f,
             CreateTexture("PickupFacets", TexturePattern.Pickup), Vector2.one);
         Material neonMaterial = CreateMaterial("NeonRailMaterial", new Color(0.06f, 0.75f, 1f), 0f, 0.75f,
@@ -267,6 +269,23 @@ public static class RollABallSceneBuilder
         material.SetTextureScale("_BaseMap", tiling);
         EditorUtility.SetDirty(material);
         return material;
+    }
+
+    private static void ApplySurfaceMaps(Material material, string normalName, string metallicName)
+    {
+        Texture2D normalMap = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Textures/{normalName}.png");
+        Texture2D metallicMap = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Textures/{metallicName}.png");
+        if (normalMap == null || metallicMap == null)
+        {
+            Debug.LogError($"Missing surface maps for {material.name}: {normalName}, {metallicName}");
+            return;
+        }
+
+        material.SetTexture("_BumpMap", normalMap);
+        material.SetTexture("_MetallicGlossMap", metallicMap);
+        material.EnableKeyword("_NORMALMAP");
+        material.EnableKeyword("_METALLICSPECGLOSSMAP");
+        EditorUtility.SetDirty(material);
     }
 
     private enum TexturePattern { Ground, Rail, Pickup }

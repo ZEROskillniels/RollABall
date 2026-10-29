@@ -28,7 +28,7 @@ Sammle alle **12 Pickups** innerhalb von **180 Sekunden**. Der Punktestand und d
 - Physikbasierte Bewegung per `Rigidbody.AddForce` in `FixedUpdate` und Einsammeln über Trigger-Kollisionen.
 - Kamera mit weichem Follow-Verhalten in `LateUpdate`.
 - Vier sichtbare Außenwände, acht dünne Labyrinthwände und vier **zusätzliche unsichtbare Sicherheitswände**, die ein Verlassen des Spielfelds verhindern.
-- Selbst erstellte Pinball-Texturen und Materialien für Spielfeld, Metallwände und goldene Pickups; Chromoptik, Licht und Spur für die Kugel.
+- Selbst erstellte Pinball-Texturen und Materialien für Spielfeld, Metallwände und goldene Pickups; Chromoptik, Licht und Spur für die Kugel. Wand- und Kugelmaterial verwenden wie in der Unity-Einführung **Base Map, Normal Map und Metallic Map**. Die PNG-Dateien liegen unter `Assets/Textures`, die Materialdateien unter `Assets/Materials`.
 - Drei zusätzliche farbige Lichter, Sammelton, Punktestand, Countdown und Sieg-Konfetti.
 
 ### Bonusaufgaben aus dem Übungsblatt
